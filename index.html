@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LabSync</title>
-<style>
+  <head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LabSync</title>
+        <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 :root{--bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--surf3:#21262d;--bord:rgba(48,54,61,1);--bord2:rgba(48,54,61,0.6);--txt:#e6edf3;--muted:#7d8590;--faint:#3d444d;--pri:#2f81f7;--prih:#1f6feb;--prihl:rgba(47,129,247,0.12);--ok:#3fb950;--okhl:rgba(63,185,80,0.12);--err:#f85149;--warn:#d29922;--warnhl:rgba(210,153,34,0.12);--afip-hl:rgba(188,76,0,0.15);--r:6px;--rl:10px;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif}
 body.light{--bg:#f6f8fa;--surf:#fff;--surf2:#f0f2f4;--surf3:#e8eaed;--bord:rgba(208,215,222,1);--bord2:rgba(208,215,222,0.6);--txt:#1f2328;--muted:#656d76;--faint:#c9d1d9;--prihl:rgba(47,129,247,0.1);--okhl:rgba(63,185,80,0.1);--warnhl:rgba(210,153,34,0.1);--afip-hl:rgba(188,76,0,0.08)}
@@ -72,101 +72,211 @@ textarea.editor::placeholder{color:var(--faint);font-family:var(--sans);font-siz
 .ab-val{color:var(--muted)}
 .toast{position:fixed;bottom:22px;right:22px;z-index:999;padding:10px 18px;border-radius:var(--rl);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:opacity 0.2s,transform 0.2s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
+.btn-color-active{background:var(--prihl)!important;color:var(--pri)!important;border-color:rgba(47,129,247,0.4)!important}
+.val-high{color:#c084fc!important;font-weight:700}
+.val-low{color:#f87171!important;font-weight:700}
+.val-ok{color:#4ade80!important}
+.val-neutral{color:#79c0ff}
+.legend-bar{display:none;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 14px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);font-size:11px}
+.legend-bar.show{display:flex}
+.leg-item{display:flex;align-items:center;gap:5px}
+.leg-dot{width:9px;height:9px;border-radius:50%}
 @media(max-width:480px){.header{padding:0 14px}.main{padding:14px 12px}.actions{flex-direction:column;align-items:stretch}.btn-pri,.btn-sec{justify-content:center}.lab-tab .lab-sub{display:none}}
 </style>
-</head>
-<body>
-<header class="header">
-  <div class="logo">
-    <div class="logo-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-    Lab<span class="logo-acc">Sync</span>
-  </div>
-  <span class="badge-v">v1.1</span>
-  <div class="sp"></div>
-  <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Alternar tema">
-    <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
-</header>
-<main class="main">
-  <div class="lab-tabs">
-    <button class="lab-tab active-matrix" data-lab="matrix" onclick="setLab('matrix')">
-      <span class="tab-dot matrix"></span>
-      <span><strong>MATRIX FMABC</strong><span class="lab-sub"> — SA / SBC Hospitais, UPAs, UBS</span></span>
-    </button>
-    <button class="lab-tab" data-lab="afip" onclick="setLab('afip')">
-      <span class="tab-dot afip"></span>
-      <span><strong>AFIP</strong><span class="lab-sub"> — Covas / Dante Pazzanese / Mandaqui</span></span>
-    </button>
-  </div>
-  <div class="ws">
-    <div class="card">
-      <div class="card-head">
-        <div class="card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
-        <div><div class="card-title">Texto Bruto</div><div class="card-sub" id="inp-hint">Cole o PDF do MATRIX (Ctrl+A &rarr; Ctrl+C)</div></div>
-      </div>
-      <div class="card-body">
-        <textarea id="inp" class="editor" placeholder="Cole o conteúdo copiado do laudo aqui..."></textarea>
-        <div class="char-count" id="char-ct">0 caracteres</div>
-      </div>
-      <div class="card-foot">
-        <div class="sdot" id="idot"></div><span id="ist">Aguardando texto...</span>
-        <div class="sp"></div>
-        <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="clearAll()">Limpar</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <div class="card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
-        <div><div class="card-title">Resultado Compacto</div><div class="card-sub">- DD/MM/AAAA (HHhMM): Hb | Ht | Leuco...</div></div>
-      </div>
-      <div class="card-body">
-        <div id="rbox" class="result-box"><span class="result-empty">Cole um texto e clique em Extrair...</span></div>
-      </div>
-      <div class="card-foot">
-        <div class="sdot" id="odot"></div><span id="ost">Pronto</span>
-        <div class="sp"></div>
-        <span id="exam-ct" style="font-weight:600;color:var(--txt)"></span>
-        <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="copiar()">Copiar</button>
-      </div>
-    </div>
-  </div>
-  <div class="actions">
-    <button class="btn-pri" onclick="extrair()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22V12M12 12L7 17M12 12L17 17"/><path d="M20 6H4M16 10H8"/></svg>
-      Extrair Resultados
-    </button>
+      </head>
+      <body>
+        <header class="header">
+          <div class="logo">
+            <div class="logo-mark">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </div>
+            Lab<span class="logo-acc">Sync</span>
+          </div>
+          <span class="badge-v">v1.1</span>
+          <div class="sp">
+          </div>
+          <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Alternar tema">
+            <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </header>
+        <main class="main">
+          <div class="lab-tabs">
+            <button class="lab-tab active-matrix" data-lab="matrix" onclick="setLab('matrix')">
+              <span class="tab-dot matrix">
+              </span>
+              <span>
+                <strong>MATRIX FMABC</strong>
+                <span class="lab-sub"> — SA / SBC Hospitais, UPAs, UBS</span>
+              </span>
+            </button>
+            <button class="lab-tab" data-lab="afip" onclick="setLab('afip')">
+              <span class="tab-dot afip">
+              </span>
+              <span>
+                <strong>AFIP</strong>
+                <span class="lab-sub"> — Covas / Dante Pazzanese / Mandaqui</span>
+              </span>
+            </button>
+          </div>
+          <div class="ws">
+            <div class="card">
+              <div class="card-head">
+                <div class="card-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="card-title">Texto Bruto</div>
+                  <div class="card-sub" id="inp-hint">Cole o PDF do MATRIX (Ctrl+A &rarr; Ctrl+C)</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <textarea id="inp" class="editor" placeholder="Cole o conteúdo copiado do laudo aqui...">
+                </textarea>
+                <div class="char-count" id="char-ct">0 caracteres</div>
+              </div>
+              <div class="card-foot">
+                <div class="sdot" id="idot">
+                </div>
+                <span id="ist">Aguardando texto...</span>
+                <div class="sp">
+                </div>
+                <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="clearAll()">Limpar</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <div class="card-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="card-title">Resultado Compacto</div>
+                  <div class="card-sub">- DD/MM/AAAA (HHhMM): Hb | Ht | Leuco...</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="rbox" class="result-box">
+                  <span class="result-empty">Cole um texto e clique em Extrair...</span>
+                </div>
+              </div>
+              <div class="card-foot">
+                <div class="sdot" id="odot">
+                </div>
+                <span id="ost">Pronto</span>
+                <div class="sp">
+                </div>
+                <span id="exam-ct" style="font-weight:600;color:var(--txt)">
+                </span>
+                <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="copiar()">Copiar</button>
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-pri" onclick="extrair()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 22V12M12 12L7 17M12 12L17 17"/>
+                <path d="M20 6H4M16 10H8"/>
+              </svg>
+              Extrair Resultados
+            </button>
             <button class="btn-sec" onclick="loadEx()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
-      Exemplo
-    </button>
-    <div class="sp"></div>
-    <div class="opts-row">
-      <span style="font-weight:600;color:var(--txt)">Leuco:</span>
-      <label class="opt-item">
-        <select id="sel-leuco">
-          <option value="sem">Sem diferencial</option>
-          <option value="abs">Com diferencial absoluto</option>
-          <option value="pct">Com diferencial %</option>
-        </select>
-      </label>
-      <span style="font-weight:600;color:var(--txt);margin-left:6px">Índices:</span>
-      <label class="opt-item"><input type="checkbox" id="chk-vcm"> VCM</label>
-      <label class="opt-item"><input type="checkbox" id="chk-hcm"> HCM</label>
-      <label class="opt-item"><input type="checkbox" id="chk-chcm"> CHCM</label>
-      <label class="opt-item"><input type="checkbox" id="chk-rdw"> RDW</label>
-    </div>
-  </div>
-  <div class="panel">
-    <div class="panel-head" onclick="togglePanel('ab')">
-      <div class="card-icon" style="background:var(--surf3)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h8m-8 6h16"/></svg></div>
-      <div><div class="card-title">Abreviações usadas</div><div class="card-sub">Exame &rarr; sigla no resultado</div></div>
-      <span class="panel-chev" id="chev-ab">&#8964;</span>
-    </div>
-    <div class="panel-body" id="body-ab"><div class="ab-grid" id="ab-grid"></div></div>
-  </div>
-</main>
-<div class="toast" id="toast"><span id="tmsg">Copiado!</span></div>
-<script>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 8 12 12 14 14"/>
+              </svg>
+              Exemplo
+            </button>
+            <button class="btn-sec" id="btn-color" onclick="toggleColor()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10"/>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83"/>
+              </svg>
+              Colorir Alterados
+            </button>
+            <div class="sp">
+            </div>
+            <div class="opts-row">
+              <span style="font-weight:600;color:var(--txt)">Sexo:</span>
+              <label class="opt-item">
+                <select id="sel-sexo" onchange="if(colorMode)renderColor()">
+                  <option value="M">Masculino</option>
+                  <option value="F">Feminino</option>
+                </select>
+              </label>
+              <span style="font-weight:600;color:var(--txt);margin-left:8px">Leuco:</span>
+              <label class="opt-item">
+                <select id="sel-leuco">
+                  <option value="sem">Sem diferencial</option>
+                  <option value="abs">Com diferencial absoluto</option>
+                  <option value="pct">Com diferencial %</option>
+                </select>
+              </label>
+              <span style="font-weight:600;color:var(--txt);margin-left:6px">Índices:</span>
+              <label class="opt-item">
+                <input type="checkbox" id="chk-vcm"> VCM</label>
+                <label class="opt-item">
+                  <input type="checkbox" id="chk-hcm"> HCM</label>
+                  <label class="opt-item">
+                    <input type="checkbox" id="chk-chcm"> CHCM</label>
+                    <label class="opt-item">
+                      <input type="checkbox" id="chk-rdw"> RDW</label>
+                    </div>
+                  </div>
+                  <div class="legend-bar" id="legend-bar">
+                    <span style="font-weight:600;color:var(--txt);font-size:11px">Legenda:</span>
+                    <span class="leg-item">
+                      <span class="leg-dot" style="background:#c084fc">
+                      </span>
+                      <span style="color:#c084fc">Elevado</span>
+                    </span>
+                    <span class="leg-item">
+                      <span class="leg-dot" style="background:#f87171">
+                      </span>
+                      <span style="color:#f87171">Baixo</span>
+                    </span>
+                    <span class="leg-item">
+                      <span class="leg-dot" style="background:#4ade80">
+                      </span>
+                      <span style="color:#4ade80">Normal</span>
+                    </span>
+                    <span class="leg-item">
+                      <span class="leg-dot" style="background:#79c0ff">
+                      </span>
+                      <span style="color:#79c0ff">Sem referência</span>
+                    </span>
+                  </div>
+                  <div class="panel">
+                    <div class="panel-head" onclick="togglePanel('ab')">
+                      <div class="card-icon" style="background:var(--surf3)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M4 6h16M4 12h8m-8 6h16"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div class="card-title">Abreviações usadas</div>
+                        <div class="card-sub">Exame &rarr; sigla no resultado</div>
+                      </div>
+                      <span class="panel-chev" id="chev-ab">&#8964;</span>
+                    </div>
+                    <div class="panel-body" id="body-ab">
+                      <div class="ab-grid" id="ab-grid">
+                      </div>
+                    </div>
+                  </div>
+                </main>
+                <div class="toast" id="toast">
+                  <span id="tmsg">Copiado!</span>
+                </div>
+                <script>
 var currentLab = 'matrix';
 var curOut = '';
 
@@ -284,7 +394,6 @@ function limparValor(v){
   var m = v.match(/^(-?\d+(?:[.,]\d+)?)/);
   if(!m) return null;
   var s = m[1].replace('.',',');
-  // milhar só para positivos >= 1000
   if(s.indexOf(',')===-1 && s.indexOf('-')===-1 && parseInt(s)>=1000){
     s = parseInt(s).toLocaleString('pt-BR');
   }
@@ -516,7 +625,7 @@ function extrair(){
           if(/^[A-Z]{3,}$/.test(fwdL)&&!/\d/.test(fwdL)&&fwd>i+1)break;
         }
         var nomeExame=norm(linha);
-        var examesConhecidos=/^(ureia|creatinina|sodio|potassio|magnesio|proteina|proteinas|albumina|globulina|glicose|tsh|tgo|tgp|transaminase|fosfatase|gama|amilase|lipase|bilirrubina|ttpa|tp|tempo de|inr|colesterol|triglicerides|ferritina|insulina|acido urico|tfge|microalbuminuria|calcio|fosforo|ldh|cpk|ck-mb|troponina|bnp|nt-probnp)/i;
+        var examesConhecidos=/^(ureia|creatinina|sodio|potassio|magnesio|proteina|glicose|tsh|tgo|tgp|transaminase|fosfatase|gama|amilase|lipase|bilirrubina|ttpa|tp|tempo de|inr|colesterol|triglicerides|ferritina|insulina|acido urico|tfge|microalbuminuria|calcio|fosforo|albumina|globulina|ldh|cpk|ck-mb|troponina|bnp|nt-probnp)/i;
         if(temRes&&!temLixo(norm(linha),lixo)&&(examesConhecidos.test(nomeExame)||linha.length>3)){secaoAtual=linha;}
       }
 
@@ -629,7 +738,10 @@ function extrair(){
       }
     }
 
+    lastTokens = allTokens;
+    lastData = data;
     setOut(out,pares.length);
+    if(colorMode) renderColor();
     document.getElementById('odot').className='sdot ok';
     document.getElementById('ost').textContent='Extração concluída';
 
@@ -638,6 +750,189 @@ function extrair(){
     document.getElementById('ost').textContent='Erro: '+e.message;
     console.error(e);
   }
+}
+
+var colorMode = false;
+var lastTokens = [];
+var lastData = '';
+
+// ── REFERENCE RANGES ─────────────────────────────────────────────────────────
+// Format: [min, max] or {M:[min,max], F:[min,max]} or [null, max] for ≤max
+var REFS = {
+  // Hemograma
+  'Hb':   {M:[13,17], F:[12,15]},
+  'Ht':   {M:[40,50], F:[36,46]},
+  'VCM':  [80,100],
+  'HCM':  [27,32],
+  'CHCM': [31.5,36],
+  'RDW':  [12,15],
+  'Leuco':[4.5,11],   // thousands
+  'Plaq': [150,400],  // thousands
+  // Coagulação
+  'TTPA': [24.2,36.3],
+  'TP':   [11,14],
+  'INR':  [1.0,1.2],
+  // Inflamação
+  'PCR':  [null,5.0],
+  // Bioquímica
+  'Glic': [70,99],
+  'TGO':  {M:[null,40], F:[null,31]},
+  'TGP':  {M:[null,41], F:[null,31]},
+  'GGT':  {M:[8,61],    F:[5,36]},
+  'FAL':  [40,129],
+  'Amil': [28,100],
+  'Lip':  [13,60],
+  'BT':   [null,1.2],
+  'BD':   [null,0.2],
+  'BI':   [null,0.8],
+  'Creat':{M:[0.7,1.3], F:[0.5,1.1]},
+  'Ur':   [16.6,48.5],
+  'Na':   [135,150],
+  'K':    [3.5,5.0],
+  'Mg':   [1.6,2.4],
+  'CaT':  [8.6,10.0],
+  'P':    [2.5,4.5],
+  'PtTotal':[6.6,8.7],
+  'Alb':  [3.5,5.2],
+  'LDH':  [140,280],
+  'Lact': [4.5,19.8],
+  'Ferrit':{M:[15,200], F:[12,150]},
+  'TSH':  [0.4,4.5],
+  'T4L':  [0.7,1.8],
+  // Gasometria venosa
+  'pH':   [7.36,7.41],
+  'PO2':  [30,50],
+  'PCO2': [40,45],
+  'Bic':  [23,27],
+  'BE':   [-3,3],
+  'Sat':  [60,80],
+  'CaI':  [1.15,1.33],
+  'Cl':   [98,107]
+  // Na e K da gaso usam mesma ref
+};
+
+function getRef(abrev, sexo){
+  var r = REFS[abrev];
+  if(!r) return null;
+  if(r.M && r.F) return sexo==='F' ? r.F : r.M;
+  return r;
+}
+
+function parseVal(s){
+  if(!s) return null;
+  // remove ponto de milhar, troca vírgula por ponto
+  var clean = s.replace(/\./g,'').replace(',','.');
+  var n = parseFloat(clean);
+  return isNaN(n) ? null : n;
+}
+
+function classifyToken(tokText, sexo){
+  // tokText ex: "Hb 9,2" ou "Leuco 3.000" ou "GasVEN pH 7,30 - PO2 44,3 ..."
+  // Retorna array de {text, cls} spans
+  var result = [];
+
+  // Gasometria: split by ' - '
+  if(/^Gas(VEN|ART)\s/.test(tokText)){
+    var parts = tokText.split(' - ');
+    var out = [];
+    for(var p=0;p<parts.length;p++){
+      var part = parts[p].trim();
+      // first part has the GasVEN prefix
+      var label, val;
+      if(p===0){
+        var m = part.match(/^(Gas(?:VEN|ART))\s+(\S+)\s+(.+)$/);
+        if(m){
+          var gasoPrefix = m[1]+' ';
+          label = m[2]; val = m[3];
+          var cls = getClass(label, val, sexo);
+          out.push({text:gasoPrefix, cls:'val-neutral'});
+          out.push({text:label+' '+val, cls:cls});
+        } else {
+          out.push({text:part, cls:'val-neutral'});
+        }
+      } else {
+        var sp = part.indexOf(' ');
+        if(sp===-1){out.push({text:part,cls:'val-neutral'});continue;}
+        label = part.substring(0,sp);
+        val = part.substring(sp+1);
+        var cls = getClass(label, val, sexo);
+        out.push({text:label+' '+val, cls:cls});
+      }
+    }
+    return out;
+  }
+
+  // Exame normal: "Abrev valor" ou "Leuco 9.600 (N 2.130 - ...)"
+  // Extrair abrev e valor principal
+  var m2 = tokText.match(/^(\S+)\s+(-?[\d.,]+)(.*)?$/);
+  if(!m2) return [{text:tokText, cls:'val-neutral'}];
+
+  var abrev = m2[1], val = m2[2], rest = m2[3]||'';
+  var cls = getClass(abrev, val, sexo);
+  result.push({text:abrev+' '+val+rest, cls:cls});
+  return result;
+}
+
+function getClass(abrev, valStr, sexo){
+  var ref = getRef(abrev, sexo);
+  if(!ref) return 'val-neutral';
+  var v = parseVal(valStr);
+  if(v===null) return 'val-neutral';
+  // Leuco e Plaq estão em milhar no resultado mas ref também está em milhar
+  var lo = ref[0], hi = ref[1];
+  if(lo===null && hi!==null){ return v>hi?'val-high':'val-ok'; }
+  if(lo!==null && hi===null){ return v<lo?'val-low':'val-ok'; }
+  if(v<lo) return 'val-low';
+  if(v>hi) return 'val-high';
+  return 'val-ok';
+}
+
+function toggleColor(){
+  colorMode = !colorMode;
+  var btn = document.getElementById('btn-color');
+  var legend = document.getElementById('legend-bar');
+  if(colorMode){
+    btn.classList.add('btn-color-active');
+    legend.classList.add('show');
+    renderColor();
+  } else {
+    btn.classList.remove('btn-color-active');
+    legend.classList.remove('show');
+    // restore plain text
+    if(curOut) document.getElementById('rbox').textContent = curOut;
+  }
+}
+
+function renderColor(){
+  if(!curOut || lastTokens.length===0) return;
+  var sexo = document.getElementById('sel-sexo').value;
+  var box = document.getElementById('rbox');
+
+  // Rebuild the output as HTML with colored spans
+  var prefix = '- '+lastData+': ';
+  var html = escHtml(prefix);
+
+  for(var t=0;t<lastTokens.length;t++){
+    var tokObj = lastTokens[t];
+    var tok = tokObj.t;
+    if(t>0){
+      var prevGaso = lastTokens[t-1].gaso;
+      var sep = (tokObj.gaso&&prevGaso)?' - ':' | ';
+      html += escHtml(sep);
+    }
+    // Colorize this token
+    var spans = classifyToken(tok, sexo);
+    for(var s=0;s<spans.length;s++){
+      if(s>0) html += escHtml(' - ');
+      html += '<span class="'+spans[s].cls+'">'+escHtml(spans[s].text)+'</span>';
+    }
+  }
+
+  box.innerHTML = html;
+}
+
+function escHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function setOut(txt,count){
@@ -776,5 +1071,5 @@ function loadEx(){
   toast('Exemplo carregado!');
 }
 </script>
-</body>
-</html>
+              </body>
+            </html>
