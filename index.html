@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabSync</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--surf3:#21262d;--bord:rgba(48,54,61,1);--bord2:rgba(48,54,61,0.6);--txt:#e6edf3;--muted:#7d8590;--faint:#3d444d;--pri:#2f81f7;--prih:#1f6feb;--prihl:rgba(47,129,247,0.12);--ok:#3fb950;--okhl:rgba(63,185,80,0.12);--err:#f85149;--warn:#d29922;--warnhl:rgba(210,153,34,0.12);--afip-hl:rgba(188,76,0,0.15);--r:6px;--rl:10px;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif}
+body.light{--bg:#f6f8fa;--surf:#fff;--surf2:#f0f2f4;--surf3:#e8eaed;--bord:rgba(208,215,222,1);--bord2:rgba(208,215,222,0.6);--txt:#1f2328;--muted:#656d76;--faint:#c9d1d9;--prihl:rgba(47,129,247,0.1);--okhl:rgba(63,185,80,0.1);--warnhl:rgba(210,153,34,0.1);--afip-hl:rgba(188,76,0,0.08)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.6;min-height:100vh}
+.header{background:var(--surf);border-bottom:1px solid var(--bord);padding:0 24px;height:52px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:700;font-size:17px;letter-spacing:-0.03em}
+.logo-mark{width:28px;height:28px;background:linear-gradient(135deg,#2f81f7,#1f6feb);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-acc{color:var(--pri)}
+.badge-v{font-family:var(--mono);font-size:10px;font-weight:600;background:var(--prihl);color:var(--pri);border:1px solid rgba(47,129,247,0.25);padding:2px 7px;border-radius:99px}
+.sp{flex:1}
+.btn-theme{width:32px;height:32px;border-radius:50%;border:1px solid var(--bord);background:var(--surf2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0}
+.btn-theme:hover{background:var(--prihl);color:var(--pri)}
+.main{max-width:1080px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:18px}
+.lab-tabs{display:flex;gap:8px;background:var(--surf);border:1px solid var(--bord);border-radius:var(--rl);padding:8px}
+.lab-tab{flex:1;padding:10px 16px;border-radius:var(--r);border:1px solid transparent;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);background:transparent}
+.lab-tab.active-matrix{background:var(--prihl);border-color:rgba(47,129,247,0.35);color:var(--pri)}
+.lab-tab.active-afip{background:var(--afip-hl);border-color:rgba(188,76,0,0.35);color:#f0883e}
+.lab-tab:hover:not(.active-matrix):not(.active-afip){background:var(--surf2);color:var(--txt)}
+.tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tab-dot.matrix{background:var(--pri)}
+.tab-dot.afip{background:#f0883e}
+.lab-sub{font-size:11px;font-weight:400;opacity:0.8}
+.ws{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:680px){.ws{grid-template-columns:1fr}}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column}
+.card-head{padding:12px 16px;border-bottom:1px solid var(--bord2);display:flex;align-items:center;gap:10px}
+.card-icon{width:28px;height:28px;background:var(--surf3);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0}
+.card-title{font-size:13px;font-weight:600}
+.card-sub{font-size:11px;color:var(--muted)}
+.card-body{padding:14px 16px;flex:1}
+.card-foot{padding:7px 16px;border-top:1px solid var(--bord2);background:var(--surf2);display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+textarea.editor{width:100%;min-height:260px;resize:vertical;background:var(--surf2);border:1.5px solid var(--faint);border-radius:var(--r);color:var(--txt);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;outline:none;transition:border-color 0.15s}
+textarea.editor:focus{border-color:var(--pri)}
+textarea.editor::placeholder{color:var(--faint);font-family:var(--sans);font-size:12px}
+.char-count{font-size:11px;color:var(--faint);text-align:right;margin-top:4px}
+.result-box{min-height:200px;background:var(--surf2);border:1.5px solid var(--faint);border-radius:var(--r);padding:12px;font-family:var(--mono);font-size:12.5px;line-height:2;color:#79c0ff;font-weight:600;white-space:pre-wrap;word-break:break-word;user-select:text}
+.result-empty{color:var(--faint);font-family:var(--sans);font-weight:400;font-size:13px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.sdot.ok{background:var(--ok);box-shadow:0 0 0 3px var(--okhl)}
+.sdot.err{background:var(--err);box-shadow:0 0 0 3px rgba(248,81,73,0.15)}
+.sdot.warn{background:var(--warn);box-shadow:0 0 0 3px var(--warnhl)}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn-pri{padding:10px 20px;background:var(--pri);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.15s,transform 0.1s;box-shadow:0 2px 8px rgba(47,129,247,0.3)}
+.btn-pri:hover{background:var(--prih)}
+.btn-pri:active{transform:translateY(1px)}
+.btn-sec{padding:9px 14px;background:var(--surf2);color:var(--muted);border:1px solid var(--bord);border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.15s}
+.btn-sec:hover{background:var(--prihl);color:var(--pri);border-color:rgba(47,129,247,0.4)}
+.opts-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.opt-item{display:flex;align-items:center;gap:5px;cursor:pointer}
+.opt-item input[type="checkbox"]{accent-color:var(--pri);width:13px;height:13px}
+.opt-item select{background:var(--surf2);border:1px solid var(--bord);border-radius:4px;color:var(--txt);font-size:12px;padding:3px 7px;font-family:var(--sans)}
+.panel{background:var(--surf);border:1px solid var(--bord);border-radius:var(--rl);overflow:hidden}
+.panel-head{padding:11px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background 0.15s,border-color 0.15s}
+.panel-head:hover{background:var(--surf2)}
+.panel-head.open{border-bottom-color:var(--bord2)}
+.panel-chev{margin-left:auto;color:var(--faint);font-size:16px;transition:transform 0.2s;line-height:1}
+.panel-chev.open{transform:rotate(180deg)}
+.panel-body{padding:14px 16px;display:none}
+.panel-body.open{display:block}
+.ab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+.ab-item{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 9px;background:var(--surf2);border-radius:4px;border:1px solid var(--bord2)}
+.ab-key{font-family:var(--mono);font-weight:700;color:var(--pri);min-width:60px;font-size:11px}
+.ab-val{color:var(--muted)}
+.toast{position:fixed;bottom:22px;right:22px;z-index:999;padding:10px 18px;border-radius:var(--rl);background:var(--txt);color:var(--bg);font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:opacity 0.2s,transform 0.2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:480px){.header{padding:0 14px}.main{padding:14px 12px}.actions{flex-direction:column;align-items:stretch}.btn-pri,.btn-sec{justify-content:center}.lab-tab .lab-sub{display:none}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+    Lab<span class="logo-acc">Sync</span>
+  </div>
+  <span class="badge-v">v1.1</span>
+  <div class="sp"></div>
+  <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Alternar tema">
+    <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+<main class="main">
+  <div class="lab-tabs">
+    <button class="lab-tab active-matrix" data-lab="matrix" onclick="setLab('matrix')">
+      <span class="tab-dot matrix"></span>
+      <span><strong>MATRIX FMABC</strong><span class="lab-sub"> — SA / SBC Hospitais, UPAs, UBS</span></span>
+    </button>
+    <button class="lab-tab" data-lab="afip" onclick="setLab('afip')">
+      <span class="tab-dot afip"></span>
+      <span><strong>AFIP</strong><span class="lab-sub"> — Covas / Dante Pazzanese / Mandaqui</span></span>
+    </button>
+  </div>
+  <div class="ws">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
+        <div><div class="card-title">Texto Bruto</div><div class="card-sub" id="inp-hint">Cole o PDF do MATRIX (Ctrl+A &rarr; Ctrl+C)</div></div>
+      </div>
+      <div class="card-body">
+        <textarea id="inp" class="editor" placeholder="Cole o conteúdo copiado do laudo aqui..."></textarea>
+        <div class="char-count" id="char-ct">0 caracteres</div>
+      </div>
+      <div class="card-foot">
+        <div class="sdot" id="idot"></div><span id="ist">Aguardando texto...</span>
+        <div class="sp"></div>
+        <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="clearAll()">Limpar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+        <div><div class="card-title">Resultado Compacto</div><div class="card-sub">- DD/MM/AAAA (HHhMM): Hb | Ht | Leuco...</div></div>
+      </div>
+      <div class="card-body">
+        <div id="rbox" class="result-box"><span class="result-empty">Cole um texto e clique em Extrair...</span></div>
+      </div>
+      <div class="card-foot">
+        <div class="sdot" id="odot"></div><span id="ost">Pronto</span>
+        <div class="sp"></div>
+        <span id="exam-ct" style="font-weight:600;color:var(--txt)"></span>
+        <button class="btn-sec" style="padding:3px 10px;font-size:11px" onclick="copiar()">Copiar</button>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn-pri" onclick="extrair()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22V12M12 12L7 17M12 12L17 17"/><path d="M20 6H4M16 10H8"/></svg>
+      Extrair Resultados
+    </button>
+            <button class="btn-sec" onclick="loadEx()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+      Exemplo
+    </button>
+    <div class="sp"></div>
+    <div class="opts-row">
+      <span style="font-weight:600;color:var(--txt)">Leuco:</span>
+      <label class="opt-item">
+        <select id="sel-leuco">
+          <option value="sem">Sem diferencial</option>
+          <option value="abs">Com diferencial absoluto</option>
+          <option value="pct">Com diferencial %</option>
+        </select>
+      </label>
+      <span style="font-weight:600;color:var(--txt);margin-left:6px">Índices:</span>
+      <label class="opt-item"><input type="checkbox" id="chk-vcm"> VCM</label>
+      <label class="opt-item"><input type="checkbox" id="chk-hcm"> HCM</label>
+      <label class="opt-item"><input type="checkbox" id="chk-chcm"> CHCM</label>
+      <label class="opt-item"><input type="checkbox" id="chk-rdw"> RDW</label>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head" onclick="togglePanel('ab')">
+      <div class="card-icon" style="background:var(--surf3)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h8m-8 6h16"/></svg></div>
+      <div><div class="card-title">Abreviações usadas</div><div class="card-sub">Exame &rarr; sigla no resultado</div></div>
+      <span class="panel-chev" id="chev-ab">&#8964;</span>
+    </div>
+    <div class="panel-body" id="body-ab"><div class="ab-grid" id="ab-grid"></div></div>
+  </div>
+</main>
+<div class="toast" id="toast"><span id="tmsg">Copiado!</span></div>
+<script>
+var currentLab = 'matrix';
+var curOut = '';
+
+var AB = [
+  ['calcio total','CaT'],
+  ['calcio','CaT'],
+  ['tempo de tromboplastina parcial ativada','TTPA'],
+  ['tempo de tromboplastina parcial ativado','TTPA'],
+  ['tempo de tromboplastina parcial ativada','TTPA'],
+  ['tempo de tromboplastina','TTPA'],
+  ['bilirrubina','BI'],
+  ['bilirrubina indireta','BI'],
+  ['gama glutamil transferase','GGT'],['gama glutamil','GGT'],['gama gt','GGT'],
+  ['hemoglobina globular media','HCM'],['hemoglobina globular media','HCM'],
+  ['conc. hemoglo','CHCM'],['concentracao de hemoglobina','CHCM'],
+  ['volume globular medio','VCM'],['volume globular medio','VCM'],
+  ['hemoglobina glicada','HbA1c'],['hba1c','HbA1c'],
+  ['hemoglobina','Hb'],
+  ['hematocrito','Ht'],
+  ['vcm','VCM'],['hcm','HCM'],['chcm','CHCM'],['rdw','RDW'],
+  ['leucocitos','Leuco'],['leucograma','Leuco'],
+  ['linfocitos atipicos','LinfAt'],
+  ['neutrofilos','N'],['segmentados','N'],
+  ['metamielocitos','Meta'],['mielocitos','Mielo'],
+  ['bastonetes','Bast'],['bastoes','Bast'],
+  ['linfocitos','Lf'],['monocitos','Mo'],
+  ['eosinofilos','Eo'],['basofilos','Baso'],
+  ['plaquetas','Plaq'],
+  ['reticulocitos','Retic'],
+  ['tempo de protrombina','TP'],['ttpa','TTPA'],['inr','INR'],
+  ['fibrinogenio','Fibrin'],['d-dimero','D-Dim'],
+  ['proteina c reativa','PCR'],
+  ['velocidade de hemossedimentacao','VHS'],
+  ['procalcitonina','PCT'],
+  ['glicose','Glic'],['glicemia','Glic'],
+  ['hemoglobina glicada','HbA1c'],
+  ['insulina','Ins'],
+  ['colesterol total','CT'],['colesterol hdl','HDL'],['colesterol ldl','LDL'],
+  ['colesterol vldl','VLDL'],
+  ['triglicerideo','TGL'],['trigliceride','TGL'],
+  ['creatinina','Creat'],['ureia','Ur'],['acido urico','AU'],
+  ['taxa de filtracao glomerular','TFGe'],['tfge','TFGe'],
+  ['microalbuminuria','MicroAlb'],
+  ['sodio','Na'],['potassio','K'],['cloro','Cl'],
+  ['magnesio','Mg'],
+  ['calcio total','CaT'],['ca ionico','CaI'],['calcio ionizado','CaI'],
+  ['fosforo','P'],
+  ['fosfatase alcalina','FAL'],
+  ['bilirrubina total','BT'],['bilirrubina direta','BD'],['bilirrubina indireta','BI'],
+  ['proteinas totais','PtTotal'],['albumina','Alb'],['globulina','Glob'],
+  ['amilase','Amil'],['lipase','Lip'],
+  ['ast','TGO'],['tgo','TGO'],['alt','TGP'],['tgp','TGP'],['ggt','GGT'],
+  ['lactato','Lact'],['ldh','LDH'],
+  ['cpk','CPK'],['ck-mb','CK-MB'],
+  ['troponina i','TropI'],['troponina','Trop'],
+  ['bnp','BNP'],['nt-probnp','NT-proBNP'],
+  ['base exces','BE'],['base excess','BE'],['excesso de base','BE'],
+  ['saturacao de o2','Sat'],['sao2','Sat'],
+  ['bicarbonato','Bic'],['hco3','Bic'],
+  ['pco2','PCO2'],['po2','PO2'],['ph','pH'],
+  ['tsh','TSH'],['t4 livre','T4L'],['t4 total','T4T'],
+  ['t3 livre','T3L'],['t3 total','T3T'],
+  ['anti-tpo','Anti-TPO'],['tireoglobulina','Tireoglob'],
+  ['pth','PTH'],['vitamina d','VitD'],['25-oh','VitD'],
+  ['vitamina b12','B12'],['acido folico','Folato'],
+  ['cortisol','Cort'],['igf-1','IGF-1'],
+  ['fsh','FSH'],['estradiol','E2'],['progesterona','Prog'],
+  ['testosterona','Test'],['prolactina','PRL'],
+  ['ferritina','Ferrit'],['ferro serico','Fe'],
+  ['saturacao de transferrina','SatFe'],['transferrina','Transf'],
+  ['haptoglobina','Haptog'],
+  ['alfa-fetoproteina','AFP'],['cea','CEA'],
+  ['ca 19-9','CA19-9'],['ca 125','CA125'],['ca 15-3','CA15-3'],
+  ['psa total','PSA-T'],['psa livre','PSA-L'],
+  ['anti-hiv','Anti-HIV'],['vdrl','VDRL'],
+  ['hbsag','HBsAg'],['anti-hbs','Anti-HBs'],['anti-hbc','Anti-HBc'],['anti-hcv','Anti-HCV'],
+  ['vancocinemia','Vanco'],['ciclosporina','Ciclospo'],
+  ['beta-hcg','BetaHCG'],['tipo sanguineo','TipoSang']
+];
+
+var LIXO_MATRIX = [
+  'laboratorio','fmabc','amostra recebida','liberado em',
+  'cadastro:','emissao:','solicitado por','liberado por','liberacao:',
+  'responsavel tecnico','resp. tecnico','medico:','nome:','mae:','mae ','nome ','idade',
+  'clinica ','clinica:','convenio','numero de controle','pedido','registro:',
+  'endereco','avenida','bairro','cep:','tel.',
+  'valor de referencia','valores de referencia',
+  'material ','metodo ','metodo:','material:','origem:','exame:',
+  'interpretacao','a correta','impresso','pagina','fim do documento',
+  'assinatura','revisto e confirmado','resultados anteriores',
+  'hemograma completo','hemograma','eritrograma','leucograma',
+  'valor de referenci','numero de controle:',
+  'vpm','vpm :','vpm:','observacoes','observacoes:',
+  'idade/sexo','biologico:','sexo biologico'
+];
+
+var LIXO_AFIP = [
+  'afip','analises clinicas','hospital','centro medico',
+  'data de emissao','data de impressao','data do laudo','hora de emissao',
+  'requisicao','paciente:','nome:','nascimento:','sexo:',
+  'solicitante:','medico:','crm','prontuario',
+  'amostra:','material:','metodo:',
+  'valor de referencia','valores de referencia',
+  'laudo:','observacao:','pagina','impresso','assinatura','responsavel'
+];
+
+var SKIP_ALWAYS = ['eritrocitos','hemacias','eritrócitos','hemaceas'];
+
+function norm(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+function limparValor(v){
+  v = v.trim();
+  var m = v.match(/^(-?\d+(?:[.,]\d+)?)/);
+  if(!m) return null;
+  var s = m[1].replace('.',',');
+  // milhar só para positivos >= 1000
+  if(s.indexOf(',')===-1 && s.indexOf('-')===-1 && parseInt(s)>=1000){
+    s = parseInt(s).toLocaleString('pt-BR');
+  }
+  return s;
+}
+
+function getAbrev(nome){
+  var key = norm(nome);
+  var best = null, bestLen = 0;
+  for(var i=0;i<AB.length;i++){
+    var k = norm(AB[i][0]);
+    if(key.indexOf(k)!==-1 && k.length>bestLen){best=AB[i][1];bestLen=k.length;}
+  }
+  return best ? best : nome.trim();
+}
+
+function extrairData(txt){
+  var mC = txt.match(/amostra\s+recebida\s+em[:\s]+(\d{2})\/(\d{2})\/(\d{4})(?:[^\n]*?(\d{2})h\s*(\d{2}))?/i);
+  if(mC){
+    var s = mC[1]+'/'+mC[2]+'/'+mC[3];
+    if(mC[4]&&mC[5]) s+=' ('+mC[4]+'h'+mC[5]+')';
+    return s;
+  }
+  var linhas = txt.split(/\r?\n/);
+  for(var i=0;i<linhas.length;i++){
+    var l = linhas[i];
+    if(/nascimento|nasc\.|mae:|mae |cadastro:/i.test(l)) continue;
+    var m = l.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m) return m[1]+'/'+m[2]+'/'+m[3];
+  }
+  return 'S/D';
+}
+
+var DIF_NOMES = ['neutrofilos','segmentados','bastonetes','bastoes','linfocitos','monocitos','eosinofilos','basofilos','linfocitos atipicos','mielocitos','metamielocitos'];
+
+function isDif(n){for(var d=0;d<DIF_NOMES.length;d++){if(n===DIF_NOMES[d])return true;}return false;}
+
+function temLixo(ll, lixo){
+  for(var j=0;j<lixo.length;j++){
+    if(ll.indexOf(lixo[j])===0||ll===lixo[j])return true;
+    if(lixo[j].length>6&&ll.indexOf(lixo[j])!==-1)return true;
+  }
+  return false;
+}
+
+function tentarGaso(linha){
+  var G=[
+    [/^ph\s+(\d+[.,]\d+)/i,'pH'],
+    [/^po2\s+(\d+[.,]\d+)/i,'PO2'],
+    [/^pco2\s+(\d+[.,]\d+)/i,'PCO2'],
+    [/^bicarbonato\s+(\d+[.,]\d+)/i,'Bic'],
+    [/^base\s+exces\S*\s+(-?\d+[.,]?\d*)/i,'BE'],
+    [/^satura[çc][aã]o\s+de\s+o2\s+(\d+[.,]?\d*)/i,'Sat'],
+    [/^na\+\s+(\d+[.,]\d+)/i,'Na'],
+    [/^k\+\s*(\d+[.,]\d+)/i,'K'],
+    [/^ca\s+i[o\u00f4]n[i\u00ed]co\s+(\d+[.,]\d+)/i,'CaI'],
+    [/^cloro\s+(\d+[.,]\d+)/i,'Cl'],
+    [/^glicose\s+(\d+[.,]?\d*)\s/i,'Glic'],
+    [/^lactato\s+(-?\S+)\s+\d/i,'Lact']
+  ];
+  var ll=linha.trim();
+  for(var g=0;g<G.length;g++){
+    var m=ll.match(G[g][0]);
+    if(m){var val=limparValor(m[1]);if(val)return{n:G[g][1],v:val,abrev:true};}
+  }
+  return null;
+}
+
+// Preprocessar: inserir quebras de linha onde necessário
+function preprocessar(txt){
+  // Normalizar 10^3 ANTES dos triggers
+  txt = txt.replace(/(\d+(?:[.,]\d+)?)\s+10[³3][^\s]*/g,function(m,n){
+    var v=parseFloat(n.replace(',','.'));
+    return isNaN(v)?m:Math.round(v*1000).toString();
+  });
+
+  txt = txt.replace(/METAMIEL[OÓ]CITOS/gi, '##META##');
+
+  // Lista de padrões para inserir \n antes
+  var pats=[
+    /CÁLCIO/gi, /CALCIO/gi,
+    /Nome\s*:/gi, /Idade/gi, /Cl[íi]nica\s*:/gi, /Conv[êe]nio\s*:/gi, /Pedido\s*:/gi,
+    /M[eé]dico\s*:/gi, /Registro\s*:/gi, /Cadastro\s*:/gi, /Emiss[aã]o\s*:/gi,
+    /Amostra recebida/gi, /Liberado em/gi, /Material\s*:/gi, /M[eé]todo\s*:/gi,
+    /Libera[cç][aã]o\s*:/gi, /Resp\.?\s*T[eé]cnico/gi, /Resultados Anteriores/gi,
+    /Endere[cç]o\s*:/gi, /Laborat[oó]rio de/gi, /A correta/gi, /Revisto e confirmado/gi,
+    /OBSERVA[CÇ][OÕ]ES/gi, /VALOR DE REFER[EÊ]NCIA/gi,
+    /ERITROGRAMA/gi, /LEUCOGRAMA/gi, /HEMOGRAMA/gi, /GASOMETRIA/gi, /PLAQUETAS/gi,
+    // Exames com RESULTADO:
+    /UR[EÉ]IA/gi, /CREATININA/gi, /S[OÓ]DIO/gi, /POT[AÁ]SSIO/gi,
+    /MAGN[EÉ]SIO/gi, /PROTE[IÍ]NA C REATIVA/gi, /GLICOSE/gi,
+    /FERRITINA/gi, /TSH/gi,
+    /TGO/gi, /TGP/gi, /TRANSAMINASE/gi,
+    /FOSFATASE ALCALINA/gi,
+    /GAMA GLUTAMIL/gi, /GAMA GT/gi,
+    /AMILASE/gi, /LIPASE/gi,
+    /PROTE[IÍ]NAS TOTAIS/gi, /ALBUMINA\s*:/gi, /BILIRRUBINA/gi,
+    /TTPA/gi, /TP\s/gi, /TEMPO DE TROMBOPLASTINA/gi, /TEMPO DE PROTROMBINA/gi, /INR/gi,
+    // Gasometria e hemograma
+    /RESULTADO\s*:/gi,
+    /pH\s+\d/g, /PO2\s+\d/g, /PCO2\s+\d/g,
+    /Bicarbonato\s+\d/gi, /Base Exces/gi, /Satura[cç][aã]o de O2/gi,
+    /NA\+\s+\d/g, /K\+\s*\d/g, /CA i/gi, /Cloro\s+\d/gi,
+    /Glicose\s+[-\d]/gi, /Lactato\s+[-\d]/gi,
+    /ERITR[OÓ]CITOS\s*:/gi, /HEMOGLOBINA\s*:/gi, /HEMAT[OÓ]CRITO\s*:/gi,
+    /VOLUME GLOBULAR/gi, /HEMOGLOBINA GLOBULAR/gi, /CONC\.\s*HEMOGLO/gi,
+    /RDW\s*:/gi, /LEUC[OÓ]CITOS\s*:/gi, /SEGMENTADOS\s*:/gi,
+    /EOSIN[OÓ]FILOS\s*:/gi, /BAS[OÓ]FILOS\s*:/gi, /LINF[OÓ]CITOS\s*:/gi,
+    /MON[OÓ]CITOS\s*:/gi, /LINF[OÓ]CITOS AT[IÍ]PICOS/gi, /METAMIEL[OÓ]CITOS/gi, /MIEL[OÓ]CITOS\s*:/gi, /BASTONETES\s*:/gi,
+    /Plaquetas\s*:/gi, /VPM\s*:/gi,
+    /Data\s+\d{2}\/\d{2}\/\d{4}/g, /Resultado\s+\d/g
+  ];
+  for(var i=0;i<pats.length;i++){
+    txt=txt.replace(pats[i],function(m){return '\n'+m;});
+  }
+  txt=txt.replace(/\n+/g,'\n');
+  txt = txt.replace(/##META##/g, '\nMETAMIELÓCITOS');
+  txt=txt.replace(/\n+/g,'\n');
+  return txt.trim();
+}
+
+function extrair(){
+  try{
+    var raw=preprocessar(document.getElementById('inp').value);
+    if(!raw.trim()){toast('Cole um texto antes de extrair!',false);return;}
+
+    var data=extrairData(raw);
+    var linhas=raw.split(/\r?\n/);
+    var lixo=(currentLab==='matrix'?LIXO_MATRIX:LIXO_AFIP).map(norm);
+    var pares=[];
+
+    var tipoLeuco=document.getElementById('sel-leuco').value;
+    var semDif=(tipoLeuco==='sem');
+    var mostrarVCM=document.getElementById('chk-vcm').checked;
+    var mostrarHCM=document.getElementById('chk-hcm').checked;
+    var mostrarCHCM=document.getElementById('chk-chcm').checked;
+    var mostrarRDW=document.getElementById('chk-rdw').checked;
+
+    function deveIgnorar(nNorm){
+      for(var s=0;s<SKIP_ALWAYS.length;s++){if(nNorm===norm(SKIP_ALWAYS[s]))return true;}
+      if(!mostrarVCM&&(nNorm==='vcm'||nNorm.indexOf('volume globular')===0))return true;
+      if(!mostrarHCM&&(nNorm==='hcm'||nNorm.indexOf('hemoglobina globular')===0))return true;
+      if(!mostrarCHCM&&(nNorm==='chcm'||nNorm.indexOf('conc. hemoglo')===0||nNorm.indexOf('concentracao de hemoglobina')===0))return true;
+      if(!mostrarRDW&&nNorm==='rdw')return true;
+      if(semDif&&isDif(nNorm))return true;
+      return false;
+    }
+
+    var RE_NOMEVAL=/^([A-Za-z\u00C0-\u00FF+][A-Za-z\u00C0-\u00FF\s\-\/().+°:]{1,60}?)(?:\s*[:]\s*)(\d+(?:[.,]\d+)?)(?:[%\s]|$)/;
+    var RE_RESULTADO=/^resultado[\s.:]*(\d+(?:[.,]\d+)?)/i;
+    var RE_SOTEXT=/^[A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF\s\-\/().+°]{1,70}$/;
+
+    var emGaso=false, tipoGaso='GasVEN', secaoAtual=null;
+
+    for(var i=0;i<linhas.length;i++){
+      var linha=linhas[i].trim();
+      if(!linha)continue;
+      var ll=norm(linha);
+
+      // detectar gasometria
+      if(ll.indexOf('gasometria')===0){
+        emGaso=true;
+        tipoGaso=ll.indexOf('arterial')!==-1?'GasART':'GasVEN';
+        continue;
+      }
+      // sair da gaso se encontrar título em maiúsculas sem número
+      if(emGaso&&/^[A-Z\u00C0-\u00DC]{3,}$/.test(linha)&&!/\d/.test(linha)){
+        emGaso=false;
+      }
+
+      // filtro de lixo
+      if(temLixo(ll,lixo))continue;
+      if(/^[=\-\*_\s]{3,}$/.test(linha))continue;
+      if(/^\d{2}\/\d{2}\/\d{4}/.test(linha)&&linha.replace(/[\d\/\s:haH]/g,'').length<5)continue;
+      if(/^data\s+\d{2}\/\d{2}/i.test(ll))continue;
+      if(/^\d+(?:\s+\d+){2,}$/.test(linha))continue;
+      if(/^observa[cç][aã]/i.test(ll))continue;
+
+      // gasometria: parser específico
+      if(emGaso){
+        var gaso=tentarGaso(linha);
+        if(gaso){
+          if(!deveIgnorar(norm(gaso.n))){gaso.gaso=true;gaso.tipoGaso=tipoGaso;pares.push(gaso);}
+          continue;
+        }
+      }
+
+      // RESULTADO: com secaoAtual - pular resultados anteriores (múltiplos números)
+      if(RE_RESULTADO.test(linha)&&/\d+[.,]?\d*\s+\d+[.,]?\d*\s+\d/.test(linha))continue;
+      if(RE_RESULTADO.test(linha)&&secaoAtual){
+        var resResto=linha.replace(/^resultado[\s.:]*\s*/i,'');
+        var mOCR=resResto.match(/^(\d+)\s+(\d{1,3})(?:\s+[a-zA-Z]|$)/);
+        var vR=mOCR?(mOCR[1]+','+mOCR[2]):limparValor(resResto);
+        var nNormR=norm(secaoAtual);
+        if(vR&&!deveIgnorar(nNormR)&&!temLixo(nNormR,lixo)){
+          pares.push({n:secaoAtual,v:vR});
+        }
+        secaoAtual=null;
+        continue;
+      }
+
+      // padrão Nome: valor
+      var m1=RE_NOMEVAL.exec(linha);
+      if(m1){
+        var nome1=m1[1].replace(/[:.]+$/,'').trim();
+        var nNorm1=norm(nome1);
+        if(temLixo(nNorm1,lixo)){continue;}
+        if(deveIgnorar(nNorm1))continue;
+        // pular linhas de diferencial - serão tratadas pelo parser específico abaixo
+        if(!semDif&&isDif(nNorm1)){
+          // não faz nada aqui, cai para o dif parser
+        } else {
+          var val1=limparValor(m1[2]);
+          if(val1&&nome1.split(/\s+/).length<=7&&nome1.length>1&&!/\d{2}\/\d{2}\/\d{4}/.test(linha)){
+            pares.push({n:nome1,v:val1});
+            continue;
+          }
+        }
+      }
+
+      // detectar título de seção para associar ao próximo RESULTADO:
+      var soTitulo=RE_SOTEXT.test(linha)&&!/\d/.test(linha)&&linha.split(/\s+/).length<=7;
+      if(soTitulo){
+        var temRes=false;
+        for(var fwd=i+1;fwd<Math.min(i+7,linhas.length);fwd++){
+          var fwdL=linhas[fwd].trim();
+          if(!fwdL)continue;
+          if(/^resultado/i.test(fwdL)||/^\d/.test(fwdL)){temRes=true;break;}
+          if(/^[A-Z]{3,}$/.test(fwdL)&&!/\d/.test(fwdL)&&fwd>i+1)break;
+        }
+        var nomeExame=norm(linha);
+        var examesConhecidos=/^(ureia|creatinina|sodio|potassio|magnesio|proteina|proteinas|albumina|globulina|glicose|tsh|tgo|tgp|transaminase|fosfatase|gama|amilase|lipase|bilirrubina|ttpa|tp|tempo de|inr|colesterol|triglicerides|ferritina|insulina|acido urico|tfge|microalbuminuria|calcio|fosforo|ldh|cpk|ck-mb|troponina|bnp|nt-probnp)/i;
+        if(temRes&&!temLixo(norm(linha),lixo)&&(examesConhecidos.test(nomeExame)||linha.length>3)){secaoAtual=linha;}
+      }
+
+      // TTPA e outros: "TEMPO DE TROMBOPLASTINA 23.20 segundos" (número na mesma linha)
+      var mTTPA=linha.match(/^(tempo de tromboplastina\s*(?:parcial\s*ativada)?)\s*:?\s*(\d+[.,]\d+)/i);
+      if(mTTPA){
+        var vTTPA=limparValor(mTTPA[2]);
+        if(vTTPA&&!deveIgnorar(norm(mTTPA[1]))){pares.push({n:mTTPA[1],v:vTTPA});continue;}
+      }
+
+      // título seguido imediatamente de número
+      if(soTitulo&&i+1<linhas.length){
+        var prox=linhas[i+1].trim();
+        if(/^\d/.test(prox)&&!/\d{2}\/\d{2}\/\d{4}/.test(prox)&&prox.length<60){
+          var vProx=limparValor(prox);
+          var nNormT=norm(linha);
+          if(vProx&&!deveIgnorar(nNormT)&&!temLixo(nNormT,lixo)){
+            pares.push({n:linha,v:vProx});i++;continue;
+          }
+        }
+      }
+
+      // diferencial de leucócitos inline
+      if(!semDif){
+        var nLowDif=norm(linha.replace(/:.*$/,'').trim());
+        // corrigir OCR: "METAMIELOCIOS" truncado -> metamielocitos
+        if(nLowDif.indexOf('meta')===0&&nLowDif.indexOf('mieloc')!==-1){
+          nLowDif='metamielocitos';
+        }
+        if(isDif(nLowDif)){
+          var mDif;
+          if(tipoLeuco==='pct'){
+            // porcentagem: "67.0 %" ou "67.0%"
+            mDif=linha.match(/(\d+[.,]\d+)\s*%/);
+          } else {
+            // absoluto: "67.0 % 6400" ou "67.0% 6.40"
+            mDif=linha.match(/(\d+[.,]\d+)\s*%\s+(\d+(?:[.,]\d+)?)/);
+            if(mDif){
+              var vDif=limparValor(mDif[2]);
+              if(vDif&&!deveIgnorar(nLowDif)){
+                pares.push({n:nLowDif,v:vDif});
+              }
+              continue;
+            }
+            // fallback: só um número após ":"
+            mDif=linha.match(/:\s*(\d+[.,]\d+)/);
+          }
+          if(mDif){
+            var vDif2=limparValor(mDif[1]);
+            if(vDif2&&!deveIgnorar(nLowDif))pares.push({n:nLowDif,v:vDif2});
+            continue;
+          }
+        }
+      }
+    }
+
+    if(pares.length===0){
+      setOut('',0);
+      document.getElementById('odot').className='sdot warn';
+      document.getElementById('ost').textContent='Nenhum resultado encontrado';
+      return;
+    }
+
+    // montar tokens
+    var tokens=[];
+    var leucoIdx=-1, gasoInjetado=false;
+    for(var p=0;p<pares.length;p++){
+      var pn=norm(pares[p].n);
+      if(pn==='leucocitos'||pn.indexOf('leuco')===0)leucoIdx=p;
+    }
+
+    for(var p=0;p<pares.length;p++){
+      var par=pares[p];
+      var pn=norm(par.n);
+      if(!semDif&&leucoIdx>=0&&p>leucoIdx&&isDif(pn))continue;
+      var abrev=par.abrev?par.n:getAbrev(par.n);
+      var prefix2='';
+      if(par.gaso&&!gasoInjetado){gasoInjetado=true;prefix2=par.tipoGaso+' ';}
+      var tok=prefix2+abrev+' '+par.v;
+      if(!semDif&&p===leucoIdx){
+        var difP=[];
+        for(var d2=p+1;d2<pares.length;d2++){
+          if(isDif(norm(pares[d2].n)))difP.push(getAbrev(pares[d2].n)+' '+pares[d2].v);
+          else break;
+        }
+        if(difP.length>0){
+          var difSep=tipoLeuco==='pct'?' (%): ':' ';
+          tok+=difSep+'('+difP.join(' - ')+')';
+        }
+      }
+      tokens.push({t:tok,gaso:par.gaso||false});
+    }
+
+    // formatar saída: exames normais primeiro, gaso no final
+    var normTokens=[], gasoTokens=[];
+    for(var t=0;t<tokens.length;t++){
+      if(tokens[t].gaso) gasoTokens.push(tokens[t]);
+      else normTokens.push(tokens[t]);
+    }
+    var allTokens=normTokens.concat(gasoTokens);
+    var out='- '+data+': ';
+    for(var t=0;t<allTokens.length;t++){
+      var tokObj=allTokens[t];
+      var tok=tokObj.t;
+      if(t===0){out+=tok;}
+      else{
+        var prevGaso=allTokens[t-1].gaso;
+        var sep=(tokObj.gaso&&prevGaso)?' - ':' | ';
+        out+=sep+tok;
+      }
+    }
+
+    setOut(out,pares.length);
+    document.getElementById('odot').className='sdot ok';
+    document.getElementById('ost').textContent='Extração concluída';
+
+  }catch(e){
+    document.getElementById('odot').className='sdot err';
+    document.getElementById('ost').textContent='Erro: '+e.message;
+    console.error(e);
+  }
+}
+
+function setOut(txt,count){
+  curOut=txt;
+  var box=document.getElementById('rbox');
+  document.getElementById('exam-ct').textContent=count>0?count+' exame(s)':'';
+  if(!txt){box.innerHTML='<span class="result-empty">Cole um texto e clique em Extrair...</span>';}
+  else{box.textContent=txt;}
+}
+
+function setLab(lab){
+  currentLab=lab;
+  document.querySelectorAll('.lab-tab').forEach(function(b){
+    b.className='lab-tab';
+    if(b.dataset.lab===lab)b.className='lab-tab active-'+lab;
+  });
+  var hints={matrix:'Cole o PDF do MATRIX (Ctrl+A \u2192 Ctrl+C)',afip:'Cole o laudo AFIP (Ctrl+A ou imprimir laudo)'};
+  document.getElementById('inp-hint').textContent=hints[lab];
+}
+
+function toggleTheme(){
+  var b=document.body;
+  var isLight=b.classList.toggle('light');
+  var icon=document.getElementById('theme-icon');
+  if(isLight){
+    icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }else{
+    icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  }
+}
+
+function clearAll(){
+  document.getElementById('inp').value='';
+  document.getElementById('inp').dispatchEvent(new Event('input'));
+  setOut('',0);
+  document.getElementById('idot').className='sdot';
+  document.getElementById('ist').textContent='Aguardando texto...';
+  document.getElementById('odot').className='sdot';
+  document.getElementById('ost').textContent='Pronto';
+}
+
+function copiar(){
+  if(!curOut){toast('Nenhum resultado para copiar',false);return;}
+  navigator.clipboard.writeText(curOut).then(function(){toast('Copiado!');}).catch(function(){
+    var ta=document.createElement('textarea');ta.value=curOut;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);toast('Copiado!');
+  });
+}
+
+function toast(msg,ok){
+  var el=document.getElementById('toast');
+  document.getElementById('tmsg').textContent=msg;
+  el.style.background=ok===false?'#d29922':'var(--txt)';
+  el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},2500);
+}
+
+function togglePanel(id){
+  var body=document.getElementById('body-'+id);
+  var chev=document.getElementById('chev-'+id);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+  body.previousElementSibling.classList.toggle('open');
+}
+
+document.getElementById('inp').addEventListener('input',function(){
+  var n=this.value.length;
+  document.getElementById('char-ct').textContent=n+' caracteres';
+  var dot=document.getElementById('idot'),st=document.getElementById('ist');
+  if(n===0){dot.className='sdot';st.textContent='Aguardando texto...';}
+  else if(n<80){dot.className='sdot warn';st.textContent='Texto muito curto';}
+  else{dot.className='sdot ok';st.textContent='Pronto para extração';}
+});
+
+// popular grid de abreviações
+var grid=document.getElementById('ab-grid');
+var seen={};
+AB.forEach(function(ab){
+  var label=ab[1];
+  if(!seen[label]){
+    seen[label]=1;
+    var el=document.createElement('div');el.className='ab-item';
+    el.innerHTML='<span class="ab-key">'+label+'</span><span style="color:var(--faint);font-size:10px">\u2190</span><span class="ab-val">'+ab[0]+'</span>';
+    grid.appendChild(el);
+  }
+});
+
+// Exemplo
+var EX=[
+  'Laboratório de Análises Clínicas da FMABC',
+  'Hospital X - Santo André',
+  'Paciente: JOAO DA SILVA Sexo: M Nascimento: 10/05/1978',
+  'Cadastro: 25/05/2026 10:29:00',
+  'Amostra recebida em: 25/05/2026 as 07h 45min Liberado em: 25/05/2026 as 11h 20min',
+  'HEMOGRAMA COMPLETO',
+  'HEMOGLOBINA: 12.8 g/dL 13 á 17 g/dL',
+  'HEMATÓCRITO: 38 % 40 á 50 %',
+  'LEUCÓCITOS: 9.2 10³/mm³ 4.5-11.0',
+  'SEGMENTADOS: 68.3% 6.28 10³/mm³ 50 á 80%',
+  'LINFÓCITOS: 22.1% 2.03 10³/mm³',
+  'MONÓCITOS: 7.5% 0.69 10³/mm³',
+  'EOSINÓFILOS: 2.1% 0.19 10³/mm³',
+  'BASÓFILOS: 0.0% 0.00 10³/mm³',
+  'BASTONETES: 0.0% 0.00 10³/mm³',
+  'Plaquetas : 245 10³/mm³ 150 á 400 10³/mm³',
+  'Liberação: MARCELA - CRBM 12345',
+  'CREATININA',
+  'VALOR DE REFERÊNCIA',
+  'RESULTADO: 0.92 mg/dL 0.7 á 1.3 mg/dL',
+  'Material SORO',
+  'SÓDIO',
+  'RESULTADO: 138 mEq/L 135 á 150 mEq/L',
+  'POTÁSSIO',
+  'RESULTADO: 4.1 mEq/L 3.5 á 5 mEq/L',
+  'PROTEÍNA C REATIVA',
+  'RESULTADO: 0.8 mg/L Até 5.0 mg/L',
+  'GASOMETRIA VENOSA',
+  'VALOR DE REFERÊNCIA',
+  'pH 7.40 7.36 a 7.41',
+  'PO2 46.3 mmHg 30.0 a 50.0 mmHg',
+  'PCO2 42.6 mmHg 40.0 a 45.0 mmHg',
+  'Bicarbonato 25.9 mmol/L 23.0 a 27.0 mmol/L',
+  'Base Exces 1.2 -3.00 a 3.00',
+  'Saturação de O2 82.2',
+  'NA+ 138.0 mmol/L',
+  'K+ 4.20 mmol/L',
+  'CA iônico 1.220 mmol/L',
+  'Cloro 105.0 mmol/L',
+  'Liberação: MARCELA - CRBM 12345'
+].join('\n');
+
+function loadEx(){
+  document.getElementById('inp').value=EX;
+  document.getElementById('inp').dispatchEvent(new Event('input'));
+  toast('Exemplo carregado!');
+}
+</script>
+</body>
+</html>
