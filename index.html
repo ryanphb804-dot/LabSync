@@ -610,6 +610,7 @@ function extrair(){
           if(val1&&nome1.split(/\s+/).length<=7&&nome1.length>1&&!/\d{2}\/\d{2}\/\d{4}/.test(linha)){
             pares.push({n:nome1,v:val1});
             continue;
+              
           }
         }
       }
@@ -738,8 +739,6 @@ function extrair(){
       }
     }
 
-    lastTokens = allTokens;
-    lastData = data;
     setOut(out,pares.length);
     if(colorMode) renderColor();
     document.getElementById('odot').className='sdot ok';
@@ -753,138 +752,201 @@ function extrair(){
 }
 
 var colorMode = false;
-var lastTokens = [];
-var lastData = '';
+var lastOut = '';
 
 // ── REFERENCE RANGES ─────────────────────────────────────────────────────────
-// Format: [min, max] or {M:[min,max], F:[min,max]} or [null, max] for ≤max
-var REFS = {
-  // Hemograma
-  'Hb':   {M:[13,17], F:[12,15]},
-  'Ht':   {M:[40,50], F:[36,46]},
-  'VCM':  [80,100],
-  'HCM':  [27,32],
-  'CHCM': [31.5,36],
-  'RDW':  [12,15],
-  'Leuco':[4.5,11],   // thousands
-  'Plaq': [150,400],  // thousands
-  // Coagulação
-  'TTPA': [24.2,36.3],
-  'TP':   [11,14],
-  'INR':  [1.0,1.2],
-  // Inflamação
-  'PCR':  [null,5.0],
-  // Bioquímica
-  'Glic': [70,99],
-  'TGO':  {M:[null,40], F:[null,31]},
-  'TGP':  {M:[null,41], F:[null,31]},
-  'GGT':  {M:[8,61],    F:[5,36]},
-  'FAL':  [40,129],
-  'Amil': [28,100],
-  'Lip':  [13,60],
-  'BT':   [null,1.2],
-  'BD':   [null,0.2],
-  'BI':   [null,0.8],
-  'Creat':{M:[0.7,1.3], F:[0.5,1.1]},
-  'Ur':   [16.6,48.5],
-  'Na':   [135,150],
-  'K':    [3.5,5.0],
-  'Mg':   [1.6,2.4],
-  'CaT':  [8.6,10.0],
-  'P':    [2.5,4.5],
-  'PtTotal':[6.6,8.7],
-  'Alb':  [3.5,5.2],
-  'LDH':  [140,280],
-  'Lact': [4.5,19.8],
-  'Ferrit':{M:[15,200], F:[12,150]},
-  'TSH':  [0.4,4.5],
-  'T4L':  [0.7,1.8],
-  // Gasometria venosa
+// null = sem limite nesse lado
+// Valores numéricos já no mesmo formato do resultado (Leuco=milhares, Plaq=milhares)
+var REFS_SERICO = {
+  'Hb':      {M:[13,17],   F:[12,15]},
+  'Ht':      {M:[40,50],   F:[36,46]},
+  'VCM':     [80,100],
+  'HCM':     [27,32],
+  'CHCM':    [31.5,36],
+  'RDW':     [12,15],
+  'Leuco':   [4.5,11],      // resultado já em milhares (3.000 → 3,0)
+  'Plaq':    [150,400],     // resultado já em milhares (48.000 → 48)
+  'TTPA':    [24.2,36.3],
+  'TP':      [11,14],
+  'INR':     [1.0,1.2],
+  'PCR':     [null,5.0],
+  'Glic':    [70,99],
+  'TGO':     {M:[null,40], F:[null,32]},
+  'TGP':     {M:[null,41], F:[null,33]},
+  'GGT':     {M:[8,61],    F:[5,36]},
+  'FAL':     {M:[40,129],  F:[34,104]},
+  'Amil':    [28,100],
+  'Lip':     [13,60],
+  'BT':      [null,1.2],
+  'BD':      [null,0.2],
+  'BI':      [null,0.8],
+  'Creat':   {M:[0.7,1.3], F:[0.6,1.1]},
+  'Ur':      [16.6,48.5],
+  'Na':      [135,150],
+  'K':       [3.5,5.0],
+  'Mg':      [1.6,2.4],
+  'CaT':     [8.6,10.0],
+  'P':       [2.5,4.5],
+  'PtTotal': [6.6,8.7],
+  'Alb':     [3.5,5.2],
+  'LDH':     [140,280],
+  'Lact':    [4.5,19.8],
+  'Ferrit':  {M:[15,200],  F:[12,150]},
+  'TSH':     [0.4,4.5],
+  'T4L':     [0.7,1.8],
+  'Trop':    [null,0.04],
+  'TropI':   [null,0.04],
+  'D-Dim':   [null,0.5]
+};
+
+var REFS_GASO = {
   'pH':   [7.36,7.41],
   'PO2':  [30,50],
   'PCO2': [40,45],
   'Bic':  [23,27],
   'BE':   [-3,3],
   'Sat':  [60,80],
+  'Na':   [136,145],
+  'K':    [3.5,5.1],
   'CaI':  [1.15,1.33],
   'Cl':   [98,107]
-  // Na e K da gaso usam mesma ref
 };
 
-function getRef(abrev, sexo){
-  var r = REFS[abrev];
+function getRef(abrev, sexo, isGaso){
+  var tbl = isGaso ? REFS_GASO : REFS_SERICO;
+  var r = tbl[abrev];
   if(!r) return null;
-  if(r.M && r.F) return sexo==='F' ? r.F : r.M;
+  if(r && r.M && r.F) return sexo==='F' ? r.F : r.M;
   return r;
 }
 
-function parseVal(s){
-  if(!s) return null;
-  // remove ponto de milhar, troca vírgula por ponto
-  var clean = s.replace(/\./g,'').replace(',','.');
-  var n = parseFloat(clean);
+// Parse valor: remove ponto de milhar, troca vírgula por ponto
+function parseNum(s){
+  if(!s && s!==0) return null;
+  var str = String(s).trim();
+  // Remove ponto de milhar: "3.000" → "3000", mas "7.36" não deve virar "736"
+  // Heurística: se tem ponto E tem 3 dígitos depois → milhar
+  str = str.replace(/\.(?=\d{3}(?:\D|$))/g, '');
+  str = str.replace(',', '.');
+  var n = parseFloat(str);
   return isNaN(n) ? null : n;
 }
 
-function classifyToken(tokText, sexo){
-  // tokText ex: "Hb 9,2" ou "Leuco 3.000" ou "GasVEN pH 7,30 - PO2 44,3 ..."
-  // Retorna array de {text, cls} spans
-  var result = [];
-
-  // Gasometria: split by ' - '
-  if(/^Gas(VEN|ART)\s/.test(tokText)){
-    var parts = tokText.split(' - ');
-    var out = [];
-    for(var p=0;p<parts.length;p++){
-      var part = parts[p].trim();
-      // first part has the GasVEN prefix
-      var label, val;
-      if(p===0){
-        var m = part.match(/^(Gas(?:VEN|ART))\s+(\S+)\s+(.+)$/);
-        if(m){
-          var gasoPrefix = m[1]+' ';
-          label = m[2]; val = m[3];
-          var cls = getClass(label, val, sexo);
-          out.push({text:gasoPrefix, cls:'val-neutral'});
-          out.push({text:label+' '+val, cls:cls});
-        } else {
-          out.push({text:part, cls:'val-neutral'});
-        }
-      } else {
-        var sp = part.indexOf(' ');
-        if(sp===-1){out.push({text:part,cls:'val-neutral'});continue;}
-        label = part.substring(0,sp);
-        val = part.substring(sp+1);
-        var cls = getClass(label, val, sexo);
-        out.push({text:label+' '+val, cls:cls});
-      }
-    }
-    return out;
-  }
-
-  // Exame normal: "Abrev valor" ou "Leuco 9.600 (N 2.130 - ...)"
-  // Extrair abrev e valor principal
-  var m2 = tokText.match(/^(\S+)\s+(-?[\d.,]+)(.*)?$/);
-  if(!m2) return [{text:tokText, cls:'val-neutral'}];
-
-  var abrev = m2[1], val = m2[2], rest = m2[3]||'';
-  var cls = getClass(abrev, val, sexo);
-  result.push({text:abrev+' '+val+rest, cls:cls});
-  return result;
+// Converter valor do resultado para unidade de comparação com ref
+function normalizeVal(abrev, rawVal){
+  var n = parseNum(rawVal);
+  if(n === null) return null;
+  // Leuco: resultado "3.000" → parseNum → 3000, ref em milhares → dividir por 1000
+  if(abrev==='Leuco') return n/1000;
+  // Plaq: resultado "48.000" → 48000, ref em milhares → dividir por 1000
+  if(abrev==='Plaq') return n/1000;
+  return n;
 }
 
-function getClass(abrev, valStr, sexo){
-  var ref = getRef(abrev, sexo);
-  if(!ref) return 'val-neutral';
-  var v = parseVal(valStr);
-  if(v===null) return 'val-neutral';
-  // Leuco e Plaq estão em milhar no resultado mas ref também está em milhar
-  var lo = ref[0], hi = ref[1];
-  if(lo===null && hi!==null){ return v>hi?'val-high':'val-ok'; }
-  if(lo!==null && hi===null){ return v<lo?'val-low':'val-ok'; }
-  if(v<lo) return 'val-low';
-  if(v>hi) return 'val-high';
-  return 'val-ok';
+function classifyVal(abrev, rawVal, sexo, isGaso){
+  var ref = getRef(abrev, sexo, isGaso);
+  if(!ref) return 'neutral';
+  var v = normalizeVal(abrev, rawVal);
+  if(v===null) return 'neutral';
+  var lo=ref[0], hi=ref[1];
+  if(lo===null){ return v>hi?'high':'ok'; }
+  if(hi===null){ return v<lo?'low':'ok'; }
+  if(v<lo) return 'low';
+  if(v>hi) return 'high';
+  return 'ok';
+}
+
+function colorClass(cls){
+  if(cls==='high') return 'val-high';
+  if(cls==='low')  return 'val-low';
+  if(cls==='ok')   return 'val-ok';
+  return 'val-neutral';
+}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── MAIN COLOR RENDERER ───────────────────────────────────────────────────────
+// Parses the final text string (curOut) and produces colored HTML
+function buildColoredHTML(txt, sexo){
+  if(!txt) return '';
+  // Split header from tokens: "- 30/05/2026 (00h46): tokens..."
+  var colonIdx = txt.indexOf(': ');
+  var header = txt.substring(0, colonIdx+2);
+  var body   = txt.substring(colonIdx+2);
+  var html = '<span class="val-neutral">'+esc(header)+'</span>';
+
+  // Split into groups: normal tokens (separated by ' | ') and gaso block
+  // Strategy: scan left-to-right, track if we're in gaso zone
+  // Tokens separated by ' | ' outside gaso, ' - ' inside gaso
+  // GasVEN/GasART marks start of gaso zone
+
+  // First split by ' | '
+  var groups = body.split(' | ');
+  var inGaso = false;
+
+  for(var g=0;g<groups.length;g++){
+    if(g>0) html += '<span class="val-neutral"> | </span>';
+    var grp = groups[g].trim();
+
+    // Detect gaso block: starts with "GasVEN" or "GasART"
+    if(/^Gas(?:VEN|ART)\s/.test(grp)){
+      inGaso = true;
+      // Split gaso items by ' - '
+      var gasoItems = grp.split(' - ');
+      for(var gi=0;gi<gasoItems.length;gi++){
+        if(gi>0) html += '<span class="val-neutral"> - </span>';
+        var item = gasoItems[gi].trim();
+        // First item has "GasVEN pH 7,30" prefix
+        if(gi===0){
+          var m0 = item.match(/^(Gas(?:VEN|ART))\s+(\S+)\s+(.+)$/);
+          if(m0){
+            html += '<span class="val-neutral">'+esc(m0[1]+' ')+'</span>';
+            html += colorToken(m0[2], m0[3], sexo, true);
+          } else {
+            html += '<span class="val-neutral">'+esc(item)+'</span>';
+              }
+          
+
+        } else {
+          var sp = item.indexOf(' ');
+          if(sp===-1){ html+='<span class="val-neutral">'+esc(item)+'</span>'; continue; }
+          var ab = item.substring(0,sp);
+          var vl = item.substring(sp+1);
+          html += colorToken(ab, vl, sexo, true);
+        }
+      }
+      continue;
+    }
+
+    // Normal token: "Abrev valor" or "Leuco 9.600 (N 2.130 - ...)"
+    // Detect if it has a differential block
+    var parIdx = grp.indexOf(' (');
+    if(parIdx!==-1){
+      // Main exam + differential
+      var mainPart = grp.substring(0, parIdx);
+      var difPart  = grp.substring(parIdx); // " (N 2.130 - ...)"
+      var sp2 = mainPart.indexOf(' ');
+      if(sp2!==-1){
+        html += colorToken(mainPart.substring(0,sp2), mainPart.substring(sp2+1), sexo, false);
+      } else {
+        html += '<span class="val-neutral">'+esc(mainPart)+'</span>';
+      }
+      // Differential: just neutral (no refs for individual counts)
+      html += '<span class="val-neutral">'+esc(difPart)+'</span>';
+      continue;
+    }
+
+    // Plain token: "Abrev valor"
+    var sp3 = grp.indexOf(' ');
+    if(sp3===-1){ html+='<span class="val-neutral">'+esc(grp)+'</span>'; continue; }
+    html += colorToken(grp.substring(0,sp3), grp.substring(sp3+1), sexo, false);
+  }
+  return html;
+}
+
+function colorToken(abrev, val, sexo, isGaso){
+  var cls = classifyVal(abrev, val, sexo, isGaso);
+  return '<span class="'+colorClass(cls)+'">'+esc(abrev+' '+val)+'</span>';
 }
 
 function toggleColor(){
@@ -898,41 +960,14 @@ function toggleColor(){
   } else {
     btn.classList.remove('btn-color-active');
     legend.classList.remove('show');
-    // restore plain text
     if(curOut) document.getElementById('rbox').textContent = curOut;
   }
 }
 
 function renderColor(){
-  if(!curOut || lastTokens.length===0) return;
+  if(!curOut) return;
   var sexo = document.getElementById('sel-sexo').value;
-  var box = document.getElementById('rbox');
-
-  // Rebuild the output as HTML with colored spans
-  var prefix = '- '+lastData+': ';
-  var html = escHtml(prefix);
-
-  for(var t=0;t<lastTokens.length;t++){
-    var tokObj = lastTokens[t];
-    var tok = tokObj.t;
-    if(t>0){
-      var prevGaso = lastTokens[t-1].gaso;
-      var sep = (tokObj.gaso&&prevGaso)?' - ':' | ';
-      html += escHtml(sep);
-    }
-    // Colorize this token
-    var spans = classifyToken(tok, sexo);
-    for(var s=0;s<spans.length;s++){
-      if(s>0) html += escHtml(' - ');
-      html += '<span class="'+spans[s].cls+'">'+escHtml(spans[s].text)+'</span>';
-    }
-  }
-
-  box.innerHTML = html;
-}
-
-function escHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('rbox').innerHTML = buildColoredHTML(curOut, sexo);
 }
 
 function setOut(txt,count){
